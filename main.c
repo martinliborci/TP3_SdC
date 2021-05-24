@@ -64,7 +64,7 @@ void main(int argc, char const *argv[])
 			exit(1);
 		}
 
-		sleep(0.5); // Esperar medio segundo
+		sleep(1); // Esperar 1 segundo
 
 	}
 
