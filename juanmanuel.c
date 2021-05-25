@@ -32,6 +32,12 @@ static int my_close(struct inode *i, struct file *f)
     return 0;
 }
 // ==================================================================================
+// Esta función se llama cuando se ejecuta fread() a nivel de usuario
+// Copia n bytes del espacio de kernel al espacio de ususario
+// f: archivo 
+// buff:
+// len:
+// off:
 static ssize_t my_read(struct file *f, char __user *buf, size_t len, loff_t *off)
 {
     printk(KERN_INFO "Juan Manuel: read()\n");
@@ -52,10 +58,16 @@ static ssize_t my_read(struct file *f, char __user *buf, size_t len, loff_t *off
 // my_write escribe "len" bytes en "buf" y devuelve la cantidad de bytes escrita, 
 // que debe ser igual "len".
 // Cuando hago un $ echo "bla bla bla..." > /dev/SdeC_drv3, se convoca a my_write.!!
+// $ sudo su 
+// # echo -n "M" > /dev/miCatangaF1Sysfs
+// exit
+// sudo cat /dev/miCatangaF1Sysfs
+
 static ssize_t my_write(struct file *f, const char __user *buf, size_t len, loff_t *off)
 {
     printk(KERN_INFO "Juan Manuel: write()\n");
 
+    
     if ( copy_from_user(&c, buf + len - 1, 1) != 0 )
         return -EFAULT;
     else
