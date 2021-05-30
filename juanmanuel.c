@@ -1,3 +1,4 @@
+// ==================================================================================
 #include <linux/module.h>
 #include <linux/version.h>
 #include <linux/kernel.h>
@@ -7,18 +8,24 @@
 #include <linux/device.h>
 #include <linux/cdev.h>
 #include <linux/uaccess.h>
-
-// https://www.datsi.fi.upm.es/docencia/SEUM/publico/modulo.html
-
+// ----------------------------------------------------------------------------------
+#include <linux/gpio.h>     // Raspberry Pi GPIO
+// ==================================================================================
 static dev_t devID; 		// dev_t se compone del major y minor. Identifica al dispositivo
 static struct cdev charDev; 	// Estructura de datos interna al kernel que representa un dispositivo de caracteres.
                             // Intermente almacena el dev_t que identifica al dispositivo
 static struct class *devClass; 	// Para que las aplicaciones de usuario puedan utilizar el dispositivo 
                             // es necesario crear un fichero especial de tipo dispositivo de caracteres 
                             // dentro del sistema de ficheros (/dev/miCatangaF1User)
-
 static char c;              // buffer en espacio de kernel
-
+// ----------------------------------------------------------------------------------
+static struct gpio senalesEntrada[] = { // Define los pines por los que entrarán las señales
+		{ 20, GPIOF_IN, "SENAL_1" },	// Señal 1 entra por pin 20
+		{ 21, GPIOF_IN, "SENAL_2" },	// Señal 2 entra por pin 21
+};
+#define s1 0
+#define s2 1
+static char senalSelec;
 // ==================================================================================
 static int my_open(struct inode *i, struct file *f)
 {
@@ -42,6 +49,10 @@ static int my_close(struct inode *i, struct file *f)
 static ssize_t my_read(struct file *f, char __user *buf, size_t len, loff_t *off)
 {
     printk(KERN_INFO "Juan Manuel: read()\n");
+
+
+    gpio_get_value(senalesEntrada[senalSelec].gpio);
+    c = senalesEntrada[senalSelec].gpio; // Valor leído de la señal seleccionada a pasar al espacio de usuario
 
     // unsigned long __copy_to_user (	void __user * to, const void * from, unsigned long n);
     // to: dirección de destino en el espacio de usuario
@@ -78,6 +89,14 @@ static ssize_t my_write(struct file *f, const char __user *buf, size_t len, loff
 {
     printk(KERN_INFO "Juan Manuel: write()\n");
 
+    // Al presionar una tecla se cambia de señal
+    if(senalSelec == s1)
+        senalSelec = s2;
+    else
+        senalSelec = s1;
+
+    printk(KERN_INFO "Se ha seleccionado la señal %d para sensar\n", senalSelec);
+/*
     // unsigned long __copy_from_user (void * to, const void __user * from, unsigned long n);
     // to: dirección de destino en el espacio de kernel
     // from: dirección de origen en el espacio de usuario
@@ -86,6 +105,7 @@ static ssize_t my_write(struct file *f, const char __user *buf, size_t len, loff
         return -EFAULT;
     else
         return len;
+*/
 }
 // ==================================================================================
 static struct file_operations pugs_fops =
@@ -151,6 +171,14 @@ static int __init juanmanuel_init(void) /* Constructor */
         unregister_chrdev_region(devID, 1);
         return ret;
     }
+
+    // Se reservan los pines a utilizar
+    ret = gpio_request_array(senalesEntrada, ARRAY_SIZE(senalesEntrada));
+    if (ret){ // Error
+		printk(KERN_ERR "Error en gpio_request_array para senalesEntrada: %d\n", ret);
+		gpio_free_array(senalesEntrada, ARRAY_SIZE(senalesEntrada)); // Se liberan los pines
+	}
+    senalSelec = s1; // La señal seleccionada por defecto es la señal 1
     return 0;
 }
 // ----------------------------------------------------------------------------------
@@ -162,6 +190,7 @@ static void __exit juanmanuel_exit(void) /* Destructor */
     device_destroy(devClass, devID);
     class_destroy(devClass);
     unregister_chrdev_region(devID, 1);
+    gpio_free_array(senalesEntrada, ARRAY_SIZE(senalesEntrada)); // Se liberan los pines reservados
     printk(KERN_INFO "YPF Ya Paso Fangio!\n");
 }
 // ----------------------------------------------------------------------------------
