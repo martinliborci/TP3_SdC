@@ -1,28 +1,29 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-plt.style.use('ggplot')
+plt.style.use('ggplot')  # Mostar los gráficos como en el lenguaje R
 
-def live_plotter(x_vec,y1_data,line1,identifier='',pause_time=0.1):
-    if line1==[]:
-        # this is the call to matplotlib that allows dynamic plotting
-        plt.ion()
-        fig = plt.figure(figsize=(13,6))
-        ax = fig.add_subplot(111)
-        # create a variable for the line so we can later update it
-        line1, = ax.plot(x_vec,y1_data,'-o',alpha=0.8)        
-        #update plot label/title
-        plt.ylabel('Y Label')
-        plt.title('Title: {}'.format(identifier))
+# x_vec: vector con las coordenas x de los puntos a graficar
+# y1_data: vector con las coordenas y de los puntos a graficar
+# line1: 
+# title,xlabel,ylabel: título y leyendas de los ejes 
+# pause_time: tiempo en que se grafican dos puntos consecutivos
+def live_plotter(x_vec, y1_data, line1, title, xlabel, ylabel, pause_time=0.1):
+    if line1==[]: # Si no está creado y configurado el gráfico, se lo hace
+        plt.ion()  # Interactive ON: el gráfico se muestra inmediatamente
+        fig = plt.figure(figsize=(13,6)) # figsize está en pulgadas
+        ax = fig.add_subplot(111)   # Agrega los ejes
+        line1, = ax.plot(x_vec,y1_data,'-o',alpha=0.8) # Crea la línea para actualizarla después
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)                                                      
+        plt.title(title)                                                        
         plt.show()
     
-    # after the figure, axis, and line are created, we only need to update the y-data
-    line1.set_ydata(y1_data)
-    # adjust limits if new data goes beyond bounds
+    line1.set_ydata(y1_data) # Se actualiza el valor de las muestras
+    # Ajustar los límites si los nuevos datos van más allá de los mismos
     if np.min(y1_data)<=line1.axes.get_ylim()[0] or np.max(y1_data)>=line1.axes.get_ylim()[1]:
         plt.ylim([np.min(y1_data)-np.std(y1_data),np.max(y1_data)+np.std(y1_data)])
-    # this pauses the data so the figure/axis can catch up - the amount of pause can be altered above
-    plt.pause(pause_time)
+
+    plt.pause(pause_time)  # pausa para actualizar los datos
     
-    # return line so we can update it again in the next iteration
-    return line1
+    return line1  # Se retorna la línea para poder actualizarla en la siguiente iteración
