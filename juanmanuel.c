@@ -51,8 +51,8 @@ static ssize_t my_read(struct file *f, char __user *buf, size_t len, loff_t *off
     printk(KERN_INFO "Juan Manuel: read()\n");
 
 
-    gpio_get_value(senalesEntrada[senalSelec].gpio);
-    c = senalesEntrada[senalSelec].gpio; // Valor leído de la señal seleccionada a pasar al espacio de usuario
+    gpio_get_value(senalesEntrada[(int)senalSelec].gpio);
+    c = senalesEntrada[(int)senalSelec].gpio; // Valor leído de la señal seleccionada a pasar al espacio de usuario
 
     // unsigned long __copy_to_user (	void __user * to, const void * from, unsigned long n);
     // to: dirección de destino en el espacio de usuario
@@ -106,6 +106,7 @@ static ssize_t my_write(struct file *f, const char __user *buf, size_t len, loff
     else
         return len;
 */
+    return len;
 }
 // ==================================================================================
 static struct file_operations pugs_fops =
