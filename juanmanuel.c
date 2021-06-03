@@ -8,6 +8,10 @@
 #include <linux/device.h>
 #include <linux/cdev.h>
 #include <linux/uaccess.h>
+
+
+#include <linux/random.h>
+
 // ----------------------------------------------------------------------------------
 #include <linux/gpio.h>     // Raspberry Pi GPIO
 // ==================================================================================
@@ -17,7 +21,7 @@ static struct cdev charDev; 	// Estructura de datos interna al kernel que repres
 static struct class *devClass; 	// Para que las aplicaciones de usuario puedan utilizar el dispositivo 
                             // es necesario crear un fichero especial de tipo dispositivo de caracteres 
                             // dentro del sistema de ficheros (/dev/miCatangaF1User)
-static char c;              // buffer en espacio de kernel
+static char c;     // buffer en espacio de kernel
 // ----------------------------------------------------------------------------------
 static struct gpio senalesEntrada[] = { // Define los pines por los que entrarán las señales
 		{ 20, GPIOF_IN, "SENAL_1" },	// Señal 1 entra por pin 20
@@ -53,6 +57,9 @@ static ssize_t my_read(struct file *f, char __user *buf, size_t len, loff_t *off
 
     gpio_get_value(senalesEntrada[(int)senalSelec].gpio);
     c = senalesEntrada[(int)senalSelec].gpio; // Valor leído de la señal seleccionada a pasar al espacio de usuario
+
+    get_random_bytes(&c,sizeof(char));
+    printk(KERN_INFO "Valor leido: %#.2X\n",c);
 
     // unsigned long __copy_to_user (	void __user * to, const void * from, unsigned long n);
     // to: dirección de destino en el espacio de usuario
