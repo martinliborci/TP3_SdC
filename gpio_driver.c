@@ -29,7 +29,7 @@ static struct class *cl;  // Global variable for the device clas
 static struct proc_dir_entry *proc_entry;
 static char *clipboard;                     // Space for the "clipboard"
 
-static char ver[] = "a"; 
+static char ver[] = "abcd"; 
 // ----------------------------------------------------------------------------------
 static struct gpio s1[] = { 
         { 12, GPIOF_IN, "s1_b4" },	// señal 1, botón 4
@@ -76,15 +76,23 @@ static ssize_t gpio_write(struct file *filp, const char __user *buf, size_t len,
 //----------------------------------------------------------------------------------
 static ssize_t gpio_read(struct file *filp, char __user *buf, size_t len, loff_t *off) {
   
-  int nr_bytes;
+    int nr_bytes;
+    int i;
+    char valorPin;
 
-  char valorPin;
+    //get_random_bytes(&valorPin,sizeof(char));
+     printk(KERN_INFO "Valor GPIO 12: ");
+    for(i=0; i<4; i++){
+        valorPin = gpio_get_value(s1[i].gpio);
+        printk(KERN_INFO "%d", valorPin);
+        if(valorPin)
+            ver[3-i] = '1';
+        else
+            ver[3-i] = '0';
 
-  //ver = "a";
-  //valorPin = (char)gpio_get_value(s1[0].gpio);
-  get_random_bytes(&valorPin,sizeof(char));
-  ver[0] = valorPin;
-  ver[1] = '\0';
+    }
+    ver[5] = '\0';
+  printk(KERN_INFO "Ver GPIO 12: %s\n", ver);
     
  nr_bytes=strlen(ver);
 
