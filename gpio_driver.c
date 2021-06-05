@@ -204,7 +204,7 @@ void exit_clipboard_module( void )
     class_destroy(cl);
     unregister_chrdev_region(first, 1);
   cdev_del(&c_dev);
-  remove_proc_entry("clipboard", NULL);
+  remove_proc_entry("gpio_proc", NULL);
   vfree(clipboard);
   printk(KERN_INFO "Clipboard: Adios mundo kernel..!!\n");
   gpio_free_array(s1, ARRAY_SIZE(s1)); // Se liberan los pines reservados

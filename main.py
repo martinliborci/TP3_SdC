@@ -20,13 +20,19 @@ line1 = []
 # r:Read
 # b:Modo Binario
 # 0: No utilizar buffer para leer los datos en tiempo real
-f = open("/dev/miCatangaF1Sysfs", "rb", 0)
+
 
 
 while True:
     #rand_val = np.random.randn(1)
     #rand_val = f.read()
-    rand_val = int.from_bytes(f.read(), "little")  # lscpu | grep Endian
-    y_vec[-1] = rand_val
+    f = open("/proc/gpio_proc", "r")
+    stringLeido = f.read()
+    ##rand_val = int.from_bytes(f.read(), "little")  # lscpu | grep Endian
+    f.close()
+    print(stringLeido)
+    valorLeido = int(stringLeido,2)
+    print(valorLeido)
+    y_vec[-1] = valorLeido
     line1 = live_plotter(x_vec,y_vec,line1,title,xlabel,ylabel,sampleTime)
     y_vec = np.append(y_vec[1:],0.0)
