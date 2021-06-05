@@ -28,6 +28,7 @@ static struct class *cl;  // Global variable for the device clas
 
 static struct proc_dir_entry *proc_entry;
 static char *clipboard;                     // Space for the "clipboard"
+
 static char ver[] = "a"; 
 // ----------------------------------------------------------------------------------
 static struct gpio s1[] = { 
@@ -76,6 +77,7 @@ static ssize_t gpio_write(struct file *filp, const char __user *buf, size_t len,
 static ssize_t gpio_read(struct file *filp, char __user *buf, size_t len, loff_t *off) {
   
   int nr_bytes;
+
   char valorPin;
 
   //ver = "a";
@@ -83,13 +85,12 @@ static ssize_t gpio_read(struct file *filp, char __user *buf, size_t len, loff_t
   get_random_bytes(&valorPin,sizeof(char));
   ver[0] = valorPin;
   ver[1] = '\0';
-  
-  if ((*off) > 0) /* Tell the application that there is nothing left to read */
-      return 0;
-    
     
  nr_bytes=strlen(ver);
-    
+
+  if ((*off) > 0) /* Tell the application that there is nothing left to read */
+      return 0;
+   
   if (len<nr_bytes)
     return -ENOSPC;
   
@@ -176,6 +177,7 @@ int init_clipboard_module( void )
       printk(KERN_INFO "gpio_proc: Modulo cargado en el kernel..!!\n");
     }
   }
+
   // Se reservan los pines a utilizar
     ret = gpio_request_array(s1, ARRAY_SIZE(s1));
     if (ret){ // Error
@@ -189,6 +191,7 @@ int init_clipboard_module( void )
 //----------------------------------------------------------------------------------
 void exit_clipboard_module( void )
 {
+
     device_destroy(cl, first);
     class_destroy(cl);
     unregister_chrdev_region(first, 1);
@@ -201,3 +204,4 @@ void exit_clipboard_module( void )
 
 module_init( init_clipboard_module );
 module_exit( exit_clipboard_module );
+
