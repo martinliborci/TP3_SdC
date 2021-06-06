@@ -10,33 +10,44 @@
 #include <linux/proc_fs.h>
 #include <linux/string.h>
 #include <linux/vmalloc.h>
-// ----------------------------------------------------------------------------------
-#include <linux/random.h>
-// ----------------------------------------------------------------------------------
-#include <linux/gpio.h>     // Raspberry Pi GPIO
-// ----------------------------------------------------------------------------------
-
+// ==================================================================================
+include <linux/gpio.h>     // Raspberry Pi GPIO
+// ==================================================================================
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("Clipboard Kernel Module - FDI-UCM");
-MODULE_AUTHOR("Juan Carlos Saez");
-
-static dev_t first;     // Global variable for the first device number
+MODULE_AUTHOR("Martín Exequiel Liborci - Iván David Reyes Romo");
+MODULE_DESCRIPTION("Juan Manuel - The Best Driver");
+MODULE_VERSION("F1.5T");
+MODULE_SUPPORTED_DEVICE("Raspberry Pi 4 B");
+MODULE_INFO(parametro, "Temperatura/Humedad");
+// ==================================================================================
+static dev_t first;         // Global variable for the first device number
 static struct cdev c_dev;   // Global variable for the character device structure
-static struct class *cl;  // Global variable for the device clas
+static struct class *cl;    // Global variable for the device clas
+static struct proc_dir_entry *proc_entry;
 
 #define BUFFER_LENGTH       PAGE_SIZE
-
-static struct proc_dir_entry *proc_entry;
 static char *clipboard;                     // Space for the "clipboard"
-
 static char ver[] = "abcd"; 
 // ----------------------------------------------------------------------------------
+static struct gpio s2[] = { 
+        { 18, GPIOF_IN, "s2_b4" },	// señal 2, botón 4
+		    { 23, GPIOF_IN, "s2_b3" },
+        { 24, GPIOF_IN, "s2_b2" },
+        { 25, GPIOF_IN, "s2_b1" }
+};
+
 static struct gpio s1[] = { 
         { 12, GPIOF_IN, "s1_b4" },	// señal 1, botón 4
 		{ 16, GPIOF_IN, "s1_b3" },
         { 20, GPIOF_IN, "s1_b2" },
         { 21, GPIOF_IN, "s1_b1" }	
 };
+
+static struct gpio *pSL = s1;
+
+#define senal1 0
+#define senal2 1
+static char senalSelec = senal1;
 //----------------------------------------------------------------------------------
 static int my_open(struct inode *i, struct file *f)
   {
@@ -50,40 +61,35 @@ static int my_close(struct inode *i, struct file *f)
     return 0;
 }
 //----------------------------------------------------------------------------------
-static ssize_t gpio_write(struct file *filp, const char __user *buf, size_t len, loff_t *off) {
-  int available_space = BUFFER_LENGTH-1;
-  
-  if ((*off) > 0) /* The application can write in this entry just once !! */
-    return 0;
-  
-  if (len > available_space) {
-    printk(KERN_INFO "buffer: not enough space!!\n");
-    return -ENOSPC;
-  }
-  
-  /* Transfiere data desde el espacio de usuario al espacio de kernel */
-  /* echo un mensaje > /proc/clipboard                                */
+static ssize_t gpio_write(struct file *filp, const char __user *buf, size_t len, loff_t *off) 
+{
+  // Al presionar una tecla se cambia de señal
+    if(senalSelec == senal1)
+        senalSelec = senal2;
+    else
+        senalSelec = senal1;
 
-  if (copy_from_user( &clipboard[0], buf, len ))  
-    return -EFAULT;
-
-  clipboard[len] = '\0';  /* Add the `\0' */  
-  *off+=len;              /* Update the file pointer */
-  
+    printk(KERN_INFO "Se ha seleccionado la señal %d para sensar\n", senalSelec);
   return len;
 }
 
 //----------------------------------------------------------------------------------
-static ssize_t gpio_read(struct file *filp, char __user *buf, size_t len, loff_t *off) {
+static ssize_t gpio_read(struct file *filp, char __user *buf, size_t len, loff_t *off) 
+{
   
     int nr_bytes;
     int i;
     char valorPin;
 
-    //get_random_bytes(&valorPin,sizeof(char));
+    if(senalSelec == senal1)
+        pSL = s1;
+    else
+        pSL = s2;
+
+
      printk(KERN_INFO "Valor GPIO 12: ");
     for(i=0; i<4; i++){
-        valorPin = gpio_get_value(s1[i].gpio);
+        valorPin = gpio_get_value(pSL[i].gpio);
         printk(KERN_INFO "%d", valorPin);
         if(valorPin)
             ver[3-i] = '1';
@@ -92,6 +98,7 @@ static ssize_t gpio_read(struct file *filp, char __user *buf, size_t len, loff_t
 
     }
     ver[5] = '\0';
+  
   printk(KERN_INFO "Ver GPIO 12: %s\n", ver);
     
  nr_bytes=strlen(ver);
@@ -99,7 +106,7 @@ static ssize_t gpio_read(struct file *filp, char __user *buf, size_t len, loff_t
   if ((*off) > 0) /* Tell the application that there is nothing left to read */
       return 0;
    
-  if (len<nr_bytes)
+  if (len < nr_bytes)
     return -ENOSPC;
   
     /* Transfiere data desde el espacio de kernel al espacio de usuario */ 
