@@ -11,7 +11,7 @@
 #include <linux/string.h>
 #include <linux/vmalloc.h>
 // ==================================================================================
-include <linux/gpio.h>     // Raspberry Pi GPIO
+#include <linux/gpio.h>     // Raspberry Pi GPIO
 // ==================================================================================
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Martín Exequiel Liborci - Iván David Reyes Romo");
@@ -46,7 +46,7 @@ static struct gpio s1[] = {
 static char senalSelec = senal1; // Identificador de la señal que actualmente se está leyendo
 static struct gpio *pSL = s1;    // Puntero a los pines de entrada de la señal que actualmente se está leyendo
 // ==================================================================================
-// Es llamada cuando cuando se abre el archivo
+// Es llamada cuando se abre el archivo a nivel de usuario
 // Vincula fd de nivel de usuario con el inodo de nivel de kernel
 static int my_open(struct inode *i, struct file *f)
 {
@@ -54,6 +54,7 @@ static int my_open(struct inode *i, struct file *f)
   return 0;
 }
 //----------------------------------------------------------------------------------
+// Es llamada cuando se cierra el archivo a nivel de usuario
 static int my_close(struct inode *i, struct file *f)
 {
   printk(KERN_INFO "Juan Manuel: close()\n");
@@ -95,28 +96,19 @@ static ssize_t gpio_read(struct file *filp, char __user *buf, size_t len, loff_t
   }
   senalString[5] = '\0';
 
-    nr_bytes=strlen(senalString);
+  nr_bytes = strlen(senalString);
 
-// ------ VER SI SE PUEDE SACAR O NO ------
-// ------ VER SI SE PUEDE SACAR O NO ------
-// ------ VER SI SE PUEDE SACAR O NO ------
-// ------ VER SI SE PUEDE SACAR O NO ------
   if ((*off) > 0) /* Tell the application that there is nothing left to read */
       return 0;
 
-  if (len < nr_bytes)
+  if (len < nr_bytes) // Si el buffer es más chico que el string
     return -ENOSPC;
 
-  /* Transfiere data desde el espacio de kernel al espacio de usuario */ 
-
+  // Transfiere data desde el espacio de kernel al espacio de usuario
   if (copy_to_user(buf, senalString, nr_bytes))
     return -EINVAL;
 
-  (*off)+=len;  /* Update the file pointer */
-// ------ VER SI SE PUEDE SACAR O NO ------
-// ------ VER SI SE PUEDE SACAR O NO ------
-// ------ VER SI SE PUEDE SACAR O NO ------
-// ------ VER SI SE PUEDE SACAR O NO ------
+  (*off) += len;  // Actualizar el puntero del archivo escrito
 
   return nr_bytes; 
 }
@@ -196,8 +188,7 @@ int juanmanuel_init( void )
   if (procEntry == NULL) {
       ret = -ENOMEM;
       printk(KERN_INFO "miCatangaF1Proc: No se puede crear entrada en /proc..!!\n");
-  } else
-      printk(KERN_INFO "miCatangaF1Proc: entrada creada!\n");
+  }
 
   // Se reservan los pines a utilizar por la Señal 1
   ret = gpio_request_array(s1, ARRAY_SIZE(s1));

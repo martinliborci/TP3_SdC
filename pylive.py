@@ -5,7 +5,7 @@ plt.style.use('ggplot')  # Mostar los gráficos como en el lenguaje R
 
 # x_vec: vector con las coordenas x de los puntos a graficar
 # y1_data: vector con las coordenas y de los puntos a graficar
-# line1: 
+# line1: almacenar los arcos entre puntos
 # title,xlabel,ylabel: título y leyendas de los ejes 
 # pause_time: tiempo en que se grafican dos puntos consecutivos
 def live_plotter(x_vec, y1_data, line1, title, xlabel, ylabel, pause_time=0.1):

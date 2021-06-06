@@ -1,34 +1,32 @@
 #! /usr/bin/python3
-# https://docs.python.org/3/tutorial/inputoutput.html
-
 # sudo apt-get install python3-matplotlib
 # pip3 install pynput
-# https://makersportal.com/blog/2018/8/14/real-time-graphing-in-python
+
 from pynput import keyboard as kb
 from pylive import live_plotter
 import numpy as np
 
-def pulsa(tecla):
+def detectarTecla(tecla):
     print('Se ha pulsado la tecla ' + str(tecla))
-    f = open("/proc/gpio_proc", "w")
+    f = open("/proc/miCatangaF1Proc", "w")
     f.write("a")
     f.close()
 
 
 title = "TP3: Liborci - Reyes\nJuan Manuel - The Best Driver"
-xlabel = "Señal [uni]"
-ylabel = "Tiempo [seg]"
-sampleTime = 1
+xlabel = "Tiempo"
+ylabel = "Señal"
+sampleTime = 1 # en segundos
 size = 100  # cantidad de muestras
 x_vec = np.linspace(0,1,size+1)[0:-1]  # espaciadoMuestras, stop=cantidadMuestras
 y_vec = [0] * len(x_vec)
-line1 = []
+line1 = []  # almacenar los arcos entre puntos
 
-escuchador = kb.Listener(pulsa)
+escuchador = kb.Listener(detectarTecla)
 escuchador.start()
 
 while True:
-    f = open("/proc/gpio_proc", "r")
+    f = open("/proc/miCatangaF1Proc", "r")
     stringLeido = f.read()
     f.close()
     print(stringLeido)
