@@ -41,6 +41,10 @@ static struct gpio s1[] = {
         { 21, GPIOF_IN, "s1_b1" }	
 };
 //----------------------------------------------------------------------------------
+static struct gpio led[] = {
+		{  26, GPIOF_OUT_INIT_LOW, "led" } // Led inicador de la señal seleccionada
+};
+//----------------------------------------------------------------------------------
 #define senal1 0
 #define senal2 1
 static char senalSelec = senal1; // Identificador de la señal que actualmente se está leyendo
@@ -64,10 +68,13 @@ static int my_close(struct inode *i, struct file *f)
 static ssize_t gpio_write(struct file *filp, const char __user *buf, size_t len, loff_t *off) 
 {
   // Al presionar una tecla se cambia de señal
-  if(senalSelec == senal1)
+  if(senalSelec == senal1){
       senalSelec = senal2;
-  else
+      gpio_set_value(led[0].gpio, 1);
+  }else{
       senalSelec = senal1;
+      gpio_set_value(led[0].gpio, 0);
+  }
 
   printk(KERN_INFO "Se ha seleccionado la señal %d para sensar\n", senalSelec);
   return len;
@@ -98,7 +105,7 @@ static ssize_t gpio_read(struct file *filp, char __user *buf, size_t len, loff_t
 
   nr_bytes = strlen(senalString);
 
-  if ((*off) > 0) /* Tell the application that there is nothing left to read */
+  if ((*off) > 0) // ¿Archivo vacío?
       return 0;
 
   if (len < nr_bytes) // Si el buffer es más chico que el string
@@ -204,6 +211,13 @@ int juanmanuel_init( void )
     gpio_free_array(s2, ARRAY_SIZE(s1)); // Se liberan los pines
   }
 
+  // Se reserva el pin a utilizar por el led
+  ret = gpio_request_array(led, ARRAY_SIZE(led));
+	if (ret){
+		printk(KERN_ERR "Error en gpio_request_array para led: %d\n", ret);
+		return ret;
+	}
+
   return ret;
 }
 //----------------------------------------------------------------------------------
@@ -218,7 +232,8 @@ void juanmanuel_exit( void )
   remove_proc_entry("miCatangaF1Proc", NULL);
   printk(KERN_INFO "YPF Ya Paso Fangio!\n");
   gpio_free_array(s1, ARRAY_SIZE(s1)); // Se liberan los pines reservados para Señal 1
-  gpio_free_array(s2, ARRAY_SIZE(s2)); // Se liberan los pines reservados para Señal 1
+  gpio_free_array(s2, ARRAY_SIZE(s2)); // Se liberan los pines reservados para Señal 2
+  gpio_free_array(led, ARRAY_SIZE(led)); // Se libera el pin reservado para el led
 }
 //==================================================================================
 module_init( juanmanuel_init ); // Renombra init_module
